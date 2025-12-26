@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
 // use core::num;
-use rand::rng;
-use rand::{Rng, random, rngs::ThreadRng};
+// use rand::rng;
+use rand::{rngs::ThreadRng, seq::SliceRandom};
 use std::fmt;
 
 #[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
@@ -11,6 +11,7 @@ enum Suit {
     Red,
     Orange,
     Black,
+    Joker,
 }
 
 #[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
@@ -35,6 +36,7 @@ impl fmt::Display for Suit {
             Suit::Orange => write!(f, "O"),
             Suit::Red => write!(f, "R"),
             Suit::Blue => write!(f, "U"),
+            Suit::Joker => write!(f, "J"),
         }
     }
 }
@@ -54,9 +56,9 @@ impl Default for Tile {
     }
 }
 
-fn generate_tile_stack(max_tile: usize, num_suits: usize) -> Vec<Tile> {
+fn generate_tile_stack(max_tile: usize, num_suits: usize, rng: &mut ThreadRng) -> Vec<Tile> {
     let max_n: u8 = max_tile.try_into().unwrap();
-    let mut test_vect: Vec<Tile> = Vec::with_capacity(max_tile * num_suits * 2);
+    let mut test_vect: Vec<Tile> = Vec::with_capacity(max_tile * num_suits * 2 + 2);
     for i in 0..max_tile * num_suits * 2 {
         let n: u8 = i.try_into().unwrap();
         // print!("{}\n", (n / 13 ) % 4);
@@ -79,10 +81,20 @@ fn generate_tile_stack(max_tile: usize, num_suits: usize) -> Vec<Tile> {
             }),
         }
     }
+    test_vect.push(Tile {
+        value: u8::MAX,
+        suit: Suit::Joker,
+    });
+    test_vect.push(Tile {
+        value: u8::MAX,
+        suit: Suit::Joker,
+    });
+
+    test_vect.shuffle(rng);
     return test_vect;
 }
 
-fn draw_tiles(current_stack: &mut Vec<Tile>, mut rng: ThreadRng,  to_draw: usize) -> Vec<Tile> {
+fn draw_tiles(current_stack: &mut Vec<Tile>, to_draw: usize) -> Vec<Tile> {
     // let to_draw: usize = 14;
     //check if 14 tiles exist in stack
 
@@ -91,24 +103,24 @@ fn draw_tiles(current_stack: &mut Vec<Tile>, mut rng: ThreadRng,  to_draw: usize
     }
     let mut hand_vec: Vec<Tile> = Vec::with_capacity(to_draw);
     for _ in 0..to_draw {
-        let random_tile_idx = rng.random_range(0..current_stack.len());
         // println!("{}",random_tile_idx);
-        hand_vec.push(current_stack[random_tile_idx].clone());
-        current_stack.remove(random_tile_idx);
+        let curr_last = current_stack.last().unwrap();
+        hand_vec.push(curr_last.clone());
+        current_stack.pop();
     }
     return hand_vec;
 }
 
-fn sort_by_number(hand: &mut Vec<Tile>) -> Vec<Tile>{
+fn sort_by_number(hand: &mut Vec<Tile>) -> Vec<Tile> {
     hand.sort_by(|a, b| a.value.cmp(&b.value));
-    
+
     return hand.to_vec();
 }
 
 fn main() {
-    let rng = rand::rng();
-    let mut starting_stack = generate_tile_stack(13, 4);
-    let hand = draw_tiles(&mut starting_stack, rng, 14);
+    let mut rng = rand::rng();
+    let mut starting_stack = generate_tile_stack(13, 4, &mut rng);
+    let hand = draw_tiles(&mut starting_stack, 14);
     for tile in hand {
         println!("{}", tile);
     }
@@ -122,37 +134,40 @@ mod tests {
 
     #[test]
     fn test_generation() {
-        assert_eq!(generate_tile_stack(13, 4).len(), 104);
+        let mut rng = rand::rng();
+        assert_eq!(generate_tile_stack(13, 4, &mut rng).len(), 106);
     }
 
     #[test]
     fn test_draw_tiles() {
-        let rng = rand::rng();
+        let mut rng = rand::rng();
         //1. generate stack
-        let mut stack = generate_tile_stack(13, 4);
+        let mut stack = generate_tile_stack(13, 4, &mut rng);
         //2. draw a hand
-        let hand = draw_tiles(&mut stack, rng, 14);
+        let hand = draw_tiles(&mut stack, 14);
         //3. assert size of hand
         assert_eq!(hand.len(), 14);
         //4. assert size of stack now that player has drawn
-        assert_eq!(stack.len(), 104 - 14);
+        assert_eq!(stack.len(), 106 - 14);
     }
 
     #[test]
-    fn test_sorting_num(){
+    fn test_sorting_num() {
         let mut test_hand = vec![
             Tile::new(8, Suit::Blue),
             Tile::new(10, Suit::Blue),
             Tile::new(5, Suit::Red),
             Tile::new(1, Suit::Orange),
-
         ];
         sort_by_number(&mut test_hand);
-        assert_eq!(test_hand, vec![
-            Tile::new(1, Suit::Orange),
-            Tile::new(5, Suit::Red),
-            Tile::new(8, Suit::Blue),
-            Tile::new(10, Suit::Blue),
-        ]);
+        assert_eq!(
+            test_hand,
+            vec![
+                Tile::new(1, Suit::Orange),
+                Tile::new(5, Suit::Red),
+                Tile::new(8, Suit::Blue),
+                Tile::new(10, Suit::Blue),
+            ]
+        );
     }
 }
