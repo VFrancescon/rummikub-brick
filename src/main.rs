@@ -5,7 +5,7 @@ use rand::rng;
 use rand::{Rng, random, rngs::ThreadRng};
 use std::fmt;
 
-#[derive(Clone)]
+#[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
 enum Suit {
     Blue,
     Red,
@@ -13,7 +13,7 @@ enum Suit {
     Black,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
 struct Tile {
     value: u8,
     suit: Suit,
@@ -99,6 +99,12 @@ fn draw_tiles(current_stack: &mut Vec<Tile>, mut rng: ThreadRng,  to_draw: usize
     return hand_vec;
 }
 
+fn sort_by_number(hand: &mut Vec<Tile>) -> Vec<Tile>{
+    hand.sort_by(|a, b| a.value.cmp(&b.value));
+    
+    return hand.to_vec();
+}
+
 fn main() {
     let rng = rand::rng();
     let mut starting_stack = generate_tile_stack(13, 4);
@@ -130,5 +136,23 @@ mod tests {
         assert_eq!(hand.len(), 14);
         //4. assert size of stack now that player has drawn
         assert_eq!(stack.len(), 104 - 14);
+    }
+
+    #[test]
+    fn test_sorting_num(){
+        let mut test_hand = vec![
+            Tile::new(8, Suit::Blue),
+            Tile::new(10, Suit::Blue),
+            Tile::new(5, Suit::Red),
+            Tile::new(1, Suit::Orange),
+
+        ];
+        sort_by_number(&mut test_hand);
+        assert_eq!(test_hand, vec![
+            Tile::new(1, Suit::Orange),
+            Tile::new(5, Suit::Red),
+            Tile::new(8, Suit::Blue),
+            Tile::new(10, Suit::Blue),
+        ]);
     }
 }
