@@ -117,11 +117,20 @@ fn sort_by_number(hand: &mut Vec<Tile>) -> Vec<Tile> {
     return hand.to_vec();
 }
 
+fn sort_by_suit(hand: &mut Vec<Tile>) -> Vec<Tile> {
+    hand.sort_by(|a, b| a.suit.cmp(&b.suit));
+
+    return hand.to_vec();
+}
+
 fn main() {
     let mut rng = rand::rng();
     let mut starting_stack = generate_tile_stack(13, 4, &mut rng);
-    let hand = draw_tiles(&mut starting_stack, 14);
-    for tile in hand {
+    let mut hand = draw_tiles(&mut starting_stack, 14);
+
+    let hand_sorted  = sort_by_suit(&mut hand);
+    println!("Sorted hand by suit");
+    for tile in hand_sorted {
         println!("{}", tile);
     }
 }
@@ -169,5 +178,56 @@ mod tests {
                 Tile::new(10, Suit::Blue),
             ]
         );
+    }
+
+    #[test]
+    fn test_sorting_suit() {
+        let mut test_hand = vec![
+            Tile::new(1, Suit::Orange),
+            Tile::new(1, Suit::Blue),
+            Tile::new(1, Suit::Red),
+            Tile::new(1, Suit::Black),
+        ];
+        sort_by_suit(&mut test_hand);
+        assert_eq!(
+            test_hand,
+            vec![
+                Tile::new(1, Suit::Blue),
+                Tile::new(1, Suit::Red),
+                Tile::new(1, Suit::Orange),
+                Tile::new(1, Suit::Black),
+            ]
+        );
+    }
+
+
+    #[test]
+    fn sort_by_both(){
+        // order by the sorter is Blue, Red, Orange, Black
+        let mut test_hand = vec![
+            Tile::new(1, Suit::Red),
+            Tile::new(5, Suit::Blue),
+            Tile::new(10, Suit::Red),
+            Tile::new(5, Suit::Blue),
+            Tile::new(12, Suit::Blue),
+            Tile::new(1, Suit::Black),
+            Tile::new(5, Suit::Orange),
+            Tile::new(11, Suit::Orange),
+
+        ];
+        sort_by_number(&mut test_hand);
+        sort_by_suit(&mut test_hand);
+
+        assert_eq!(test_hand,
+        vec![
+            Tile::new(5, Suit::Blue),
+            Tile::new(5, Suit::Blue),
+            Tile::new(12, Suit::Blue),
+            Tile::new(1, Suit::Red),
+            Tile::new(10, Suit::Red),
+            Tile::new(5, Suit::Orange),
+            Tile::new(11, Suit::Orange),
+            Tile::new(1, Suit::Black),
+        ])
     }
 }
