@@ -4,6 +4,7 @@
 // use rand::rng;
 use rand::{rngs::ThreadRng, seq::SliceRandom};
 use std::fmt;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
 enum Suit {
@@ -123,16 +124,43 @@ fn sort_by_suit(hand: &mut Vec<Tile>) -> Vec<Tile> {
     return hand.to_vec();
 }
 
+// todo: do not add if the suit has already been counted
+fn find_sets(mut hand: Vec<Tile>) {
+    let sorted_hand = sort_by_number(&mut hand);
+
+    let mut val_map: HashMap<u8, i32> = HashMap::new();
+
+    for tile in sorted_hand{
+        let curr_val = tile.value;
+        // if !val_map.contains_key(&curr_val){
+            // val_map.insert(curr_val, 0);
+        // } else{
+        val_map.entry(curr_val).and_modify(|val| *val += 1).or_insert(1);
+        // }
+
+    }
+    print!("{:?}", val_map);
+
+    return;
+}
+
 fn main() {
     let mut rng = rand::rng();
     let mut starting_stack = generate_tile_stack(13, 4, &mut rng);
     let mut hand = draw_tiles(&mut starting_stack, 14);
 
-    let hand_sorted  = sort_by_suit(&mut hand);
-    println!("Sorted hand by suit");
-    for tile in hand_sorted {
-        println!("{}", tile);
+    let hand_sorted  = sort_by_number(&mut hand);
+    // println!("Sorted hand by suit");
+    // for tile in hand_sorted {
+    //     println!("{}", tile);
+    // }
+    for tile in &hand_sorted{
+        println!("{}", tile)
     }
+    println!{"Set summary"};
+    find_sets(hand_sorted);
+
+
 }
 
 #[cfg(test)]
