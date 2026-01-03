@@ -125,23 +125,18 @@ fn sort_by_suit(hand: &mut Vec<Tile>) -> Vec<Tile> {
 }
 
 // todo: do not add if the suit has already been counted
-fn find_sets(mut hand: Vec<Tile>) {
-    let sorted_hand = sort_by_number(&mut hand);
-
+fn find_sets(mut hand: Vec<Tile>) -> HashMap<u8, i32> {
+    let mut sorted_hand = sort_by_number(&mut hand);
     let mut val_map: HashMap<u8, i32> = HashMap::new();
+
+    sorted_hand.dedup();
 
     for tile in sorted_hand{
         let curr_val = tile.value;
-        // if !val_map.contains_key(&curr_val){
-            // val_map.insert(curr_val, 0);
-        // } else{
+
         val_map.entry(curr_val).and_modify(|val| *val += 1).or_insert(1);
-        // }
-
     }
-    print!("{:?}", val_map);
-
-    return;
+    return val_map;
 }
 
 fn main() {
@@ -257,5 +252,24 @@ mod tests {
             Tile::new(11, Suit::Orange),
             Tile::new(1, Suit::Black),
         ])
+    }
+
+    #[test]
+    fn count_sets() {
+        let test_hand = vec![
+            Tile::new(13, Suit::Red),
+            Tile::new(13, Suit::Blue),
+            Tile::new(13, Suit::Black),
+            Tile::new(13, Suit::Black),
+            Tile::new(1, Suit::Red),
+            Tile::new(1, Suit::Black),
+            Tile::new(2, Suit::Orange),
+        ];
+        let sets = find_sets(test_hand);
+        let ans_map: HashMap<u8, i32> = HashMap::from([
+            (13, 3),
+            (1, 2),
+        ]);
+        assert_eq!(sets, ans_map);
     }
 }
