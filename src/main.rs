@@ -12,7 +12,8 @@ enum Suit {
     Red,
     Orange,
     Black,
-    Joker,
+    JokerR,
+    JokerB,
 }
 
 #[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
@@ -37,7 +38,8 @@ impl fmt::Display for Suit {
             Suit::Orange => write!(f, "O"),
             Suit::Red => write!(f, "R"),
             Suit::Blue => write!(f, "U"),
-            Suit::Joker => write!(f, "J"),
+            Suit::JokerR => write!(f, "JR"),
+            Suit::JokerB => write!(f, "JB"),
         }
     }
 }
@@ -84,11 +86,11 @@ fn generate_tile_stack(max_tile: usize, num_suits: usize, rng: &mut ThreadRng) -
     }
     test_vect.push(Tile {
         value: u8::MAX,
-        suit: Suit::Joker,
+        suit: Suit::JokerR,
     });
     test_vect.push(Tile {
         value: u8::MAX,
-        suit: Suit::Joker,
+        suit: Suit::JokerB,
     });
 
     test_vect.shuffle(rng);
