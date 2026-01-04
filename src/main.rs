@@ -6,7 +6,7 @@ use rand::{rngs::ThreadRng, seq::SliceRandom};
 use std::collections::HashMap;
 use std::{fmt, u8};
 
-#[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd, Hash)]
 enum Suit {
     Blue,
     Red,
@@ -16,7 +16,7 @@ enum Suit {
     JokerB,
 }
 
-#[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd, Hash)]
 struct Tile {
     value: u8,
     suit: Suit,
@@ -126,12 +126,13 @@ fn sort_by_suit(hand: &mut Vec<Tile>) -> Vec<Tile> {
     return hand.to_vec();
 }
 
-fn find_sets(mut hand: Vec<Tile>) -> HashMap<u8, i32> {
-    let mut sorted_hand = sort_by_number(&mut hand);
+fn find_sets(sorted_hand: &Vec<Tile>) -> HashMap<u8, i32> {
+    let mut hand_copy = sorted_hand.clone();
+    // let mut sorted_hand = sort_by_number(&mut hand_copy);
     let mut val_map: HashMap<u8, i32> = HashMap::new();
 
-    sorted_hand.dedup();
-    for tile in sorted_hand {
+    hand_copy.dedup();
+    for tile in hand_copy {
         let curr_val = tile.value;
 
         val_map
@@ -143,53 +144,61 @@ fn find_sets(mut hand: Vec<Tile>) -> HashMap<u8, i32> {
     return val_map;
 }
 
-fn find_runs(mut hand: Vec<Tile>) -> HashMap<u8, i32> {
-    let mut sorted_hand = sort_by_number(&mut hand);
-    sorted_hand = sort_by_suit(&mut sorted_hand);
-    sorted_hand.dedup();
-    let mut val_map: HashMap<u8, i32> = HashMap::new();
+//  1   2   3   4   5
+//  1  1+1 1+2 1+3 1+4
+//  1 + 4 - 1 = 4
 
-    let s = Suit::Black;
+fn find_runs(sorted_hand: &Vec<Tile>) -> HashMap<Tile, i32> {
+    let mut hand_copy = sorted_hand.clone();
+    hand_copy = sort_by_suit(&mut hand_copy);
+    hand_copy.dedup();
+    let mut val_map: HashMap<Tile, i32> = HashMap::new();
 
-    let mut black_tiles: Vec<Tile> = sorted_hand
-        .into_iter()
-        .filter(|tile| tile.suit == s)
-        .collect();
-    let win_size = 3;
-    let bt_win = black_tiles.windows(win_size);
-    for win in bt_win {
-        if win[win_size - 1].value - win[0].value == 2 {
-            println!("Found a run of: ");
-            println! {"{:?}", win};
+    // let s = Suit::Red;
+
+    let all_suits = [Suit::Black, Suit::Blue, Suit::Orange, Suit::Red];
+    for s in all_suits {
+        let tiles_by_suit: Vec<Tile> = hand_copy
+            .clone()
+            .into_iter()
+            .filter(|tile| tile.suit == s)
+            .collect();
+
+        let win_size_max: usize = 7;
+        let win_size = 3;
+
+        for win_n in win_size..win_size_max {
+            let bt_win = tiles_by_suit.windows(win_n);
+            for win in bt_win {
+                let run_span: i32 = (win[win_n - 1].value - win[0].value) as i32;
+                if run_span == win_n as i32 - 1 {
+                    val_map.entry(win[0].clone()).insert_entry(run_span);
+                }
+            }
         }
     }
-
     return val_map;
 }
 fn main() {
     let mut rng = rand::rng();
-    let mut starting_stack = generate_tile_stack(13, 4, &mut rng);
-    // let mut hand = draw_tiles(&mut starting_stack, 14);
+    let mut starting_stack  = generate_tile_stack(13, 4, &mut rng);
+    let mut hand = draw_tiles(&mut starting_stack, 14);
 
-    // let hand_sorted = sort_by_number(&mut hand);
-    // println!("Hand drawn and sorted");
-    // for tile in &hand_sorted {
-    //     println!("{}", tile)
-    // }
-    // find_runs(hand_sorted);
-    // print!("Counted sets");
-    // println!("{:?}", sets);
+    let hand_by_num = sort_by_number(&mut hand);
 
-    let test_hand = vec![
-        Tile::new(1, Suit::Black),
-        Tile::new(2, Suit::Black),
-        Tile::new(3, Suit::Black),
-        Tile::new(10, Suit::Black),
-        Tile::new(10, Suit::Orange),
-        Tile::new(11, Suit::Orange),
-        Tile::new(13, Suit::Orange),
-    ];
-    let _ = find_runs(test_hand);
+    let sets_map = find_sets(&hand_by_num);
+    let runs_map = find_runs(&hand_by_num);
+
+
+    println!("Generated random hand:");
+    for tile in &hand{
+        print!("{} ", tile);
+    }
+    print!("\n");
+
+    println!("Sets result: {:?}", sets_map);
+    println!("Runs result: {:?}", runs_map);
+
 }
 
 #[cfg(test)]
@@ -290,7 +299,7 @@ mod tests {
 
     #[test]
     fn count_sets() {
-        let test_hand = vec![
+        let mut test_hand = vec![
             Tile::new(13, Suit::Red),
             Tile::new(13, Suit::Blue),
             Tile::new(13, Suit::Black),
@@ -299,7 +308,8 @@ mod tests {
             Tile::new(1, Suit::Black),
             Tile::new(2, Suit::Orange),
         ];
-        let sets = find_sets(test_hand);
+        test_hand = sort_by_number(&mut test_hand);
+        let sets = find_sets(&test_hand);
         let ans_map: HashMap<u8, i32> = HashMap::from([(13, 3), (1, 2), (2, 1)]);
         assert_eq!(sets, ans_map);
     }
@@ -322,17 +332,41 @@ mod tests {
 
     #[test]
     fn count_runs() {
-        let test_hand = vec![
+        let mut test_hand = vec![
             Tile::new(1, Suit::Red),
             Tile::new(2, Suit::Red),
+            Tile::new(3, Suit::Red),
+            Tile::new(4, Suit::Red),
+            Tile::new(5, Suit::Red),
             Tile::new(3, Suit::Red),
             Tile::new(10, Suit::Red),
             Tile::new(10, Suit::Orange),
             Tile::new(11, Suit::Orange),
+            Tile::new(12, Suit::Orange),
             Tile::new(13, Suit::Orange),
         ];
-        let counted_runs = find_runs(test_hand);
-        let ans_map: HashMap<u8, i32> = HashMap::from([(1, 3), (10, 2)]);
+        test_hand = sort_by_number(&mut test_hand);
+        let counted_runs = find_runs(&test_hand);
+        let ans_map: HashMap<Tile, i32> = HashMap::from([
+            (Tile::new(1, Suit::Red), 4),
+            (Tile::new(2, Suit::Red), 3),
+            (Tile::new(3, Suit::Red), 2),
+            (Tile::new(10, Suit::Orange), 3),
+            (Tile::new(11, Suit::Orange), 2),
+        ]);
         assert_eq!(counted_runs, ans_map);
     }
 }
+
+// run starting at 1 with span of 2 = 1 + 1+1 + 1+2
+// run startin at 3 with span 5 = 3 + 3+1 + 3+2 + 3+3 + 3+4 + 3+5
+// run starting at n with span of k = n + n+1 + n+2 + n+3 .. + n+k-1 + n+k
+// which we can group as (k+1)n + Sum^k_0 i
+
+// which when n = 1, k = 2 -> (3)*1 + 0+1+2 = 6 which is correct
+// when n = 3, k = 5 -> (6)*3 + 0+1+2+3+4+5 = 33. which is correct
+
+// the sum section is k(k+1)/2.
+
+// so when we write out the whole expression.
+//run_value = (k+1)n + (k+1)k/2 -> (k+1)2n/2 + (k+1)k/2 -> (k+1)(2n+k)/2
