@@ -4,7 +4,7 @@
 // use rand::rng;
 use rand::{rngs::ThreadRng, seq::SliceRandom};
 use std::collections::HashMap;
-use std::fmt;
+use std::{fmt, u8};
 
 #[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
 enum Suit {
@@ -131,7 +131,6 @@ fn find_sets(mut hand: Vec<Tile>) -> HashMap<u8, i32> {
     let mut val_map: HashMap<u8, i32> = HashMap::new();
 
     sorted_hand.dedup();
-
     for tile in sorted_hand {
         let curr_val = tile.value;
 
@@ -140,31 +139,33 @@ fn find_sets(mut hand: Vec<Tile>) -> HashMap<u8, i32> {
             .and_modify(|val| *val += 1)
             .or_insert(1);
     }
+
     return val_map;
 }
 
-fn find_runs(mut hand: Vec<Tile>) -> HashMap<u8, i32>{
+fn find_runs(mut hand: Vec<Tile>) -> HashMap<u8, i32> {
     let mut sorted_hand = sort_by_number(&mut hand);
     sorted_hand = sort_by_suit(&mut sorted_hand);
     sorted_hand.dedup();
     let mut val_map: HashMap<u8, i32> = HashMap::new();
-    
+
     let s = Suit::Black;
 
-    let mut black_tiles: Vec<Tile>= sorted_hand.into_iter().filter(|tile| tile.suit == s).collect();
+    let mut black_tiles: Vec<Tile> = sorted_hand
+        .into_iter()
+        .filter(|tile| tile.suit == s)
+        .collect();
     let win_size = 3;
     let bt_win = black_tiles.windows(win_size);
-    for win in bt_win{
-        if win[win_size-1].value - win[0].value == 2{
+    for win in bt_win {
+        if win[win_size - 1].value - win[0].value == 2 {
             println!("Found a run of: ");
-            println!{"{:?}", win};
+            println! {"{:?}", win};
         }
     }
 
-   
     return val_map;
 }
-
 fn main() {
     let mut rng = rand::rng();
     let mut starting_stack = generate_tile_stack(13, 4, &mut rng);
@@ -180,14 +181,14 @@ fn main() {
     // println!("{:?}", sets);
 
     let test_hand = vec![
-            Tile::new(1, Suit::Black),
-            Tile::new(2, Suit::Black),
-            Tile::new(3, Suit::Black),
-            Tile::new(10, Suit::Black),
-            Tile::new(10, Suit::Orange),
-            Tile::new(11, Suit::Orange),
-            Tile::new(13, Suit::Orange),
-        ];
+        Tile::new(1, Suit::Black),
+        Tile::new(2, Suit::Black),
+        Tile::new(3, Suit::Black),
+        Tile::new(10, Suit::Black),
+        Tile::new(10, Suit::Orange),
+        Tile::new(11, Suit::Orange),
+        Tile::new(13, Suit::Orange),
+    ];
     let _ = find_runs(test_hand);
 }
 
@@ -299,12 +300,28 @@ mod tests {
             Tile::new(2, Suit::Orange),
         ];
         let sets = find_sets(test_hand);
-        let ans_map: HashMap<u8, i32> = HashMap::from([(13, 3), (1, 2)]);
+        let ans_map: HashMap<u8, i32> = HashMap::from([(13, 3), (1, 2), (2, 1)]);
         assert_eq!(sets, ans_map);
     }
 
+    // fn count_sets_w_joker() {
+    //     let test_hand = vec![
+    //         Tile::new(13, Suit::Red),
+    //         Tile::new(13, Suit::Blue),
+    //         Tile::new(13, Suit::Black),
+    //         Tile::new(13, Suit::Black),
+    //         Tile::new(u8::MAX, Suit::JokerB),
+    //         Tile::new(1, Suit::Red),
+    //         Tile::new(1, Suit::Black),
+    //         Tile::new(2, Suit::Orange),
+    //     ];
+    //     let sets = find_sets(test_hand);
+    //     let ans_map: HashMap<u8, i32> = HashMap::from([(13, 4), (1, 2), (2, 1)]);
+    //     assert_eq!(sets, ans_map);
+    // }
+
     #[test]
-    fn count_runs(){
+    fn count_runs() {
         let test_hand = vec![
             Tile::new(1, Suit::Red),
             Tile::new(2, Suit::Red),
@@ -315,8 +332,7 @@ mod tests {
             Tile::new(13, Suit::Orange),
         ];
         let counted_runs = find_runs(test_hand);
-        let ans_map: HashMap<u8, i32> = HashMap::from([(1, 3), (10,2)]);
+        let ans_map: HashMap<u8, i32> = HashMap::from([(1, 3), (10, 2)]);
         assert_eq!(counted_runs, ans_map);
-
     }
 }
