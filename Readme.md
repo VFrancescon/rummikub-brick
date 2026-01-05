@@ -1,4 +1,5 @@
 # Rummikub Opening Simulator
+[![Rust](https://github.com/VFrancescon/rummikub-brick/actions/workflows/rust.yml/badge.svg)](https://github.com/VFrancescon/rummikub-brick/actions/workflows/rust.yml)
 
 I love a good game of [Rummikub](https://rummikub.com/). What I don't love is watching everybody else play while I draw tiles and pass until somebody else wins.
 
