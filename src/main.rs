@@ -144,10 +144,6 @@ fn find_sets(sorted_hand: &Vec<Tile>) -> HashMap<u8, i32> {
     return val_map;
 }
 
-//  1   2   3   4   5
-//  1  1+1 1+2 1+3 1+4
-//  1 + 4 - 1 = 4
-
 fn find_runs(sorted_hand: &Vec<Tile>) -> HashMap<Tile, i32> {
     let mut hand_copy = sorted_hand.clone();
     hand_copy = sort_by_suit(&mut hand_copy);
@@ -179,9 +175,44 @@ fn find_runs(sorted_hand: &Vec<Tile>) -> HashMap<Tile, i32> {
     }
     return val_map;
 }
+
+/// Calculates point value of a run, given it starting number ```n``` and its span ```k```.
+/// The span ```k``` is how many tiles follow in a run after ```n```.
+///
+/// ## Examples
+/// ```n``` = 9, ```k``` = 2.
+/// That means the run is 9, 10, 11
+///
+/// The expected value is 9 + 10 + 11 = 30
+fn get_run_value(n: i32, k: i32) -> i32 {
+    return (k + 1) * (2 * n + k) / 2;
+}
+
+fn get_set_value(n: i32, k: i32) -> i32 {
+    return n * k;
+}
+
+fn find_opening_play(hand: Vec<Tile>) -> i32 {
+    let sets_map = find_sets(&hand);
+    let runs_map = find_runs(&hand);
+
+    // for tile_val in sets_map{
+    // //    let set_score = get_set_value(tile_val.0 as i32, tile_val.1);
+    //
+    // }
+    let mut hand_value = 0;
+    for run in runs_map {
+        let run_value = get_run_value(run.0.value as i32, run.1);
+
+        hand_value += run_value;
+    }
+    // our test hand is 9A 99U 9R 10R 11R
+    return hand_value;
+}
+
 fn main() {
     let mut rng = rand::rng();
-    let mut starting_stack  = generate_tile_stack(13, 4, &mut rng);
+    let mut starting_stack = generate_tile_stack(13, 4, &mut rng);
     let mut hand = draw_tiles(&mut starting_stack, 14);
 
     let hand_by_num = sort_by_number(&mut hand);
@@ -189,21 +220,18 @@ fn main() {
     let sets_map = find_sets(&hand_by_num);
     let runs_map = find_runs(&hand_by_num);
 
-
     println!("Generated random hand:");
-    for tile in &hand{
+    for tile in &hand {
         print!("{} ", tile);
     }
     print!("\n");
 
     println!("Sets result: {:?}", sets_map);
     println!("Runs result: {:?}", runs_map);
-
 }
 
 #[cfg(test)]
 mod tests {
-    // use rand::rng;
 
     use super::*;
 
@@ -314,22 +342,6 @@ mod tests {
         assert_eq!(sets, ans_map);
     }
 
-    // fn count_sets_w_joker() {
-    //     let test_hand = vec![
-    //         Tile::new(13, Suit::Red),
-    //         Tile::new(13, Suit::Blue),
-    //         Tile::new(13, Suit::Black),
-    //         Tile::new(13, Suit::Black),
-    //         Tile::new(u8::MAX, Suit::JokerB),
-    //         Tile::new(1, Suit::Red),
-    //         Tile::new(1, Suit::Black),
-    //         Tile::new(2, Suit::Orange),
-    //     ];
-    //     let sets = find_sets(test_hand);
-    //     let ans_map: HashMap<u8, i32> = HashMap::from([(13, 4), (1, 2), (2, 1)]);
-    //     assert_eq!(sets, ans_map);
-    // }
-
     #[test]
     fn count_runs() {
         let mut test_hand = vec![
@@ -356,17 +368,31 @@ mod tests {
         ]);
         assert_eq!(counted_runs, ans_map);
     }
+
+    #[test]
+    fn runs_value() {
+        let n = 9;
+        let k = 2;
+        assert_eq!(get_run_value(n, k), 30);
+    }
+
+    #[test]
+    fn combine_run_sets() {
+        let mut test_hand = vec![
+            Tile::new(9, Suit::Black),
+            Tile::new(9, Suit::Blue),
+            Tile::new(9, Suit::Red),
+            Tile::new(10, Suit::Red),
+            Tile::new(11, Suit::Red),
+        ];
+        test_hand = sort_by_number(&mut test_hand);
+        assert_eq!(find_opening_play(test_hand), 30);
+    }
+
+    #[test]
+    fn sets_value() {
+        let n = 9;
+        let k = 3;
+        assert_eq!(27, get_set_value(n, k));
+    }
 }
-
-// run starting at 1 with span of 2 = 1 + 1+1 + 1+2
-// run startin at 3 with span 5 = 3 + 3+1 + 3+2 + 3+3 + 3+4 + 3+5
-// run starting at n with span of k = n + n+1 + n+2 + n+3 .. + n+k-1 + n+k
-// which we can group as (k+1)n + Sum^k_0 i
-
-// which when n = 1, k = 2 -> (3)*1 + 0+1+2 = 6 which is correct
-// when n = 3, k = 5 -> (6)*3 + 0+1+2+3+4+5 = 33. which is correct
-
-// the sum section is k(k+1)/2.
-
-// so when we write out the whole expression.
-//run_value = (k+1)n + (k+1)k/2 -> (k+1)2n/2 + (k+1)k/2 -> (k+1)(2n+k)/2
