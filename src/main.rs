@@ -200,14 +200,27 @@ fn find_opening_play(hand: Vec<Tile>) -> i32 {
     // //    let set_score = get_set_value(tile_val.0 as i32, tile_val.1);
     //
     // }
-    let mut hand_value = 0;
+    let mut run_value_total = 0;
+    let mut set_value_total = 0;
+    let mut hand_total = 0;
     for run in runs_map {
         let run_value = get_run_value(run.0.value as i32, run.1);
 
-        hand_value += run_value;
+        run_value_total += run_value;
+    }
+    for set in sets_map {
+        let set_value = get_set_value(set.0 as i32, set.1);
+        set_value_total += set_value;
+    }
+    if run_value_total >= 30 {
+        hand_total = run_value_total;
+    } else if set_value_total >= 30 {
+        hand_total = set_value_total;
+    } else if (run_value_total + set_value_total) >= 30 {
+        hand_total = run_value_total + set_value_total;
     }
     // our test hand is 9A 99U 9R 10R 11R
-    return hand_value;
+    return hand_total;
 }
 
 fn main() {
@@ -377,7 +390,7 @@ mod tests {
     }
 
     #[test]
-    fn combine_run_sets() {
+    fn pick_run_or_sets() {
         let mut test_hand = vec![
             Tile::new(9, Suit::Black),
             Tile::new(9, Suit::Blue),
@@ -394,5 +407,19 @@ mod tests {
         let n = 9;
         let k = 3;
         assert_eq!(27, get_set_value(n, k));
+    }
+
+    #[test]
+    fn combine_run_sets() {
+        let mut test_hand = vec![
+            Tile::new(3, Suit::Black),
+            Tile::new(3, Suit::Blue),
+            Tile::new(3, Suit::Orange),
+            Tile::new(7, Suit::Red),
+            Tile::new(8, Suit::Red),
+            Tile::new(9, Suit::Red),
+        ];
+        test_hand = sort_by_number(&mut test_hand);
+        assert_eq!(find_opening_play(test_hand), 30);
     }
 }
