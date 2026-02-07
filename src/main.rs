@@ -209,6 +209,9 @@ fn find_opening_play(hand: Vec<Tile>) -> i32 {
         run_value_total += run_value;
     }
     for set in sets_map {
+        if set.1 < 3 {
+            continue;
+        };
         let set_value = get_set_value(set.0 as i32, set.1);
         set_value_total += set_value;
     }
@@ -237,7 +240,6 @@ fn main() {
     for tile in &hand {
         print!("{} ", tile);
     }
-    print!("\n");
 
     println!("Sets result: {:?}", sets_map);
     println!("Runs result: {:?}", runs_map);
